@@ -1429,8 +1429,29 @@ class AlexaRemote extends EventEmitter {
         this.httpsGet (`/api/behaviors/automations?limit=${limit}`, callback);
     }
 
-    executeAutomationRoutine(serialOrName, routine, callback) {
-        return this.sendSequenceCommand(serialOrName, routine, callback);
+    executeAutomationRoutine(serialOrName, utterance, callback) {
+		this.getAutomationRoutines((err, res) => {
+			if (err) {
+				return callback && callback(err, res);
+			}
+
+			let routines = res;
+			let routine = routines.find(
+				routine => routine.triggers.find(
+					trigger => trigger.payload.utterance === utterance));
+
+			if(!routine) {
+				return callback && callback(new Error('Routine not found'));
+			}
+
+			let command = {
+				sequence: routine.sequence,
+				automationId: routine.automationId,
+				status: 'ENABLED',
+			};
+
+			this.sendSequenceCommand(serialOrName, command, callback);
+		});
     }
 
     getMusicProviders(callback) {
