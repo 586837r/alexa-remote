@@ -1429,16 +1429,25 @@ class AlexaRemote extends EventEmitter {
         this.httpsGet (`/api/behaviors/automations?limit=${limit}`, callback);
     }
 
-    executeAutomationRoutine(serialOrName, utterance, callback) {
+    executeAutomationRoutine(serialOrName, utteranceOrId, callback) {
 		this.getAutomationRoutines((err, res) => {
 			if (err) {
 				return callback && callback(err, res);
 			}
 
 			let routines = res;
-			let routine = routines.find(
-				routine => routine.triggers.find(
-					trigger => trigger.payload.utterance === utterance));
+			let routine;
+
+			if (utteranceOrId.match(/amzn1.alexa.automation/)) {
+				// is id
+				routine = routines.find(r => r.automationId === utteranceOrId);
+			}
+			else {
+				// is utterance
+				routine = routines.find(
+					routine => routine.triggers.find(
+						trigger => trigger.payload.utterance === utteranceOrId));
+			}
 
 			if(!routine) {
 				return callback && callback(new Error('Routine not found'));
